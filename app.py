@@ -1,8 +1,8 @@
 import os
-
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
+from models import db, Rectangle
 
 app = Flask(__name__)
 
@@ -67,5 +67,81 @@ def get_intersecting_rectangles():
     return jsonify({'intersecting_rectangles': rectangles})
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route('/rectangles', methods=['POST'])
+def create_rectangle():
+    data = request.get_json()
+    new_rectangle = Rectangle(
+        x1=data['x1'],
+        y1=data['y1'],
+        x2=data['x2'],
+        y2=data['y2'],
+        x3=data['x3'],
+        y3=data['y3'],
+        x4=data['x4'],
+        y4=data['y4']
+    )
+    db.session.add(new_rectangle)
+    db.session.commit()
+    return jsonify({'message': 'Rectangle created', 'rectangle': new_rectangle.rectangle_id}), 201
+
+
+@app.route('/rectangles', methods=['GET'])
+def get_rectangles():
+    rectangles = Rectangle.query.all()
+    return jsonify([{
+        'rectangle_id': rect.rectangle_id,
+        'x1': rect.x1,
+        'y1': rect.y1,
+        'x2': rect.x2,
+        'y2': rect.y2,
+        'x3': rect.x3,
+        'y3': rect.y3,
+        'x4': rect.x4,
+        'y4': rect.y4
+    } for rect in rectangles])
+
+
+@app.route('/rectangles/<int:rectangle_id>', methods=['GET'])
+def get_rectangle(rectangle_id):
+    rectangle = Rectangle.query.get_or_404(id)
+    return jsonify({
+        'rectangle_id': rectangle.rectangle_id,
+        'x1': rectangle.x1,
+        'y1': rectangle.y1,
+        'x2': rectangle.x2,
+        'y2': rectangle.y2,
+        'x3': rectangle.x3,
+        'y3': rectangle.y3,
+        'x4': rectangle.x4,
+        'y4': rectangle.y4
+    })
+
+
+@app.route('/rectangles/<int:rectangle_id>', methods=['PUT'])
+def update_rectangle(rectangle_id):
+    rectangle = Rectangle.query.get_or_404(rectangle_id)
+    data = request.get_json()
+    rectangle.x1 = data['x1']
+    rectangle.y1 = data['y1']
+    rectangle.x2 = data['x2']
+    rectangle.y2 = data['y2']
+    rectangle.x3 = data['x3']
+    rectangle.y3 = data['y3']
+    rectangle.x4 = data['x4']
+    rectangle.y4 = data['y4']
+    db.session.commit()
+    return jsonify({'message': 'Rectangle updated'})
+
+
+@app.route('/rectangles/<int:rectangle_id>', methods=['DELETE'])
+def delete_rectangle(rectangle_id):
+    rectangle = Rectangle.query.get_or_404(rectangle_id)
+    db.session.delete(rectangle)
+    db.session.commit()
+    return jsonify({'message': 'Rectangle deleted'})
+
+
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()  # Create tables if they don't exist
+    app.run(host='0.0.0.0')

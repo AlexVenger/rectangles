@@ -1,16 +1,16 @@
 import os
 import time
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
+from models import db
 
 app = Flask(__name__)
 database_url = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+db.init_app(app)
 
 
 def create_sql_functions_and_tables():
