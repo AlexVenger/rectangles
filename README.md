@@ -181,12 +181,3 @@ docker-compose up --build
 ```
 
 The API will be available at `http://localhost:5000`.
-
-## License
-
-This project is licensed under the MIT License.
-```
-
-### Notes:
-- Replace `yourusername` with your actual GitHub username in the clone URL.
-- Add any other relevant sections or modifications based on your specific setup or requirements.
