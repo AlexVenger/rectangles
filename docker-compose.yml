@@ -19,7 +19,7 @@ services:
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
-      DATABASE_URL: postgres://rectangles:rectangles@localhost:5432/rectangles
+      DATABASE_URL: postgresql://rectangles:rectangles@db:5432/rectangles
     ports:
       - "5000:5000"
     depends_on:

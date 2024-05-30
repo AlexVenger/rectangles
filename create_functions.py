@@ -1,18 +1,20 @@
+import os
 import time
-
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://rectangles:rectangles@localhost/rectangles'
+database_url = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
 
-def create_sql_functions_and_table():
+def create_sql_functions_and_tables():
+    # SQL functions
     direction_function = """
     CREATE OR REPLACE FUNCTION direction(
         ax FLOAT, ay FLOAT, bx FLOAT, by FLOAT, cx FLOAT, cy FLOAT
@@ -70,23 +72,24 @@ def create_sql_functions_and_table():
 
     # SQL table creation
     create_rectangles_table = """
-        CREATE TABLE IF NOT EXISTS rectangles (
-            rectangle_id SERIAL PRIMARY KEY,
-            x1 FLOAT NOT NULL,
-            y1 FLOAT NOT NULL,
-            x2 FLOAT NOT NULL,
-            y2 FLOAT NOT NULL,
-            x3 FLOAT NOT NULL,
-            y3 FLOAT NOT NULL,
-            x4 FLOAT NOT NULL,
-            y4 FLOAT NOT NULL
-        );
-        """
+    CREATE TABLE IF NOT EXISTS rectangles (
+        rectangle_id SERIAL PRIMARY KEY,
+        x1 FLOAT NOT NULL,
+        y1 FLOAT NOT NULL,
+        x2 FLOAT NOT NULL,
+        y2 FLOAT NOT NULL,
+        x3 FLOAT NOT NULL,
+        y3 FLOAT NOT NULL,
+        x4 FLOAT NOT NULL,
+        y4 FLOAT NOT NULL
+    );
+    """
 
-    # Execute the function creation SQL statements
+    # Retry mechanism to ensure database is ready
     retries = 5
     while retries > 0:
         try:
+            print(f"Trying to connect to the database at {database_url}")
             with app.app_context():
                 with db.engine.begin() as conn:
                     conn.execute(text(direction_function))
@@ -97,7 +100,8 @@ def create_sql_functions_and_table():
                     print("SQL functions and table created successfully!")
                     break
         except OperationalError as e:
-            print("Database connection failed. Retrying in 5 seconds...")
+            print(f"Database connection failed: {e}")
+            print("Retrying in 5 seconds...")
             time.sleep(5)
             retries -= 1
             if retries == 0:
@@ -105,4 +109,4 @@ def create_sql_functions_and_table():
 
 
 if __name__ == "__main__":
-    create_sql_functions_and_table()
+    create_sql_functions_and_tables()
