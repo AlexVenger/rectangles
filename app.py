@@ -1,8 +1,8 @@
 import os
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from models import db, Rectangle
+from util import is_rectangle
 
 app = Flask(__name__)
 
@@ -11,8 +11,7 @@ database_url = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Create the SQLAlchemy db instance
-db = SQLAlchemy(app)
+db.init_app(app)
 
 
 @app.route('/intersecting_rectangles', methods=['POST'])
@@ -70,19 +69,22 @@ def get_intersecting_rectangles():
 @app.route('/rectangles', methods=['POST'])
 def create_rectangle():
     data = request.get_json()
-    new_rectangle = Rectangle(
-        x1=data['x1'],
-        y1=data['y1'],
-        x2=data['x2'],
-        y2=data['y2'],
-        x3=data['x3'],
-        y3=data['y3'],
-        x4=data['x4'],
-        y4=data['y4']
-    )
-    db.session.add(new_rectangle)
-    db.session.commit()
-    return jsonify({'message': 'Rectangle created', 'rectangle': new_rectangle.rectangle_id}), 201
+    if is_rectangle(data['x1'], data['y1'], data['x2'], data['y2'], data['x3'], data['y3'], data['x4'], data['y4']):
+        new_rectangle = Rectangle(
+            x1=data['x1'],
+            y1=data['y1'],
+            x2=data['x2'],
+            y2=data['y2'],
+            x3=data['x3'],
+            y3=data['y3'],
+            x4=data['x4'],
+            y4=data['y4']
+        )
+        db.session.add(new_rectangle)
+        db.session.commit()
+        return jsonify({'message': 'Rectangle created', 'rectangle': new_rectangle.rectangle_id}), 201
+    else:
+        return jsonify({'message': 'The given points do not form a rectangle!'}), 400
 
 
 @app.route('/rectangles', methods=['GET'])
@@ -103,7 +105,7 @@ def get_rectangles():
 
 @app.route('/rectangles/<int:rectangle_id>', methods=['GET'])
 def get_rectangle(rectangle_id):
-    rectangle = Rectangle.query.get_or_404(id)
+    rectangle = Rectangle.query.get_or_404(rectangle_id)
     return jsonify({
         'rectangle_id': rectangle.rectangle_id,
         'x1': rectangle.x1,
@@ -117,20 +119,23 @@ def get_rectangle(rectangle_id):
     })
 
 
-@app.route('/rectangles/<int:rectangle_id>', methods=['PUT'])
+@app.route('/rectangles/<int:rectangle_id>', methods=['PATCH'])
 def update_rectangle(rectangle_id):
     rectangle = Rectangle.query.get_or_404(rectangle_id)
     data = request.get_json()
-    rectangle.x1 = data['x1']
-    rectangle.y1 = data['y1']
-    rectangle.x2 = data['x2']
-    rectangle.y2 = data['y2']
-    rectangle.x3 = data['x3']
-    rectangle.y3 = data['y3']
-    rectangle.x4 = data['x4']
-    rectangle.y4 = data['y4']
-    db.session.commit()
-    return jsonify({'message': 'Rectangle updated'})
+    if is_rectangle(data['x1'], data['y1'], data['x2'], data['y2'], data['x3'], data['y3'], data['x4'], data['y4']):
+        rectangle.x1 = data['x1']
+        rectangle.y1 = data['y1']
+        rectangle.x2 = data['x2']
+        rectangle.y2 = data['y2']
+        rectangle.x3 = data['x3']
+        rectangle.y3 = data['y3']
+        rectangle.x4 = data['x4']
+        rectangle.y4 = data['y4']
+        db.session.commit()
+        return jsonify({'message': 'Rectangle updated'})
+    else:
+        return jsonify({'message': 'The given points do not form a rectangle!'}), 400
 
 
 @app.route('/rectangles/<int:rectangle_id>', methods=['DELETE'])
